@@ -31,7 +31,7 @@ export default function Mood() {
   };
 
   // Function to save moods to AsyncStorage
-  const saveMoods = async moods => {
+  const saveMoods = async (moods) => {
     try {
       await AsyncStorage.setItem("moods", JSON.stringify(moods));
     } catch (error) {
@@ -65,9 +65,9 @@ export default function Mood() {
     const updatedMoods = moods.filter((_, i) => i !== index);
     setMoods(updatedMoods);
     saveMoods(updatedMoods);
-  }
+  };
 
-  const openDescription = index => {
+  const openDescription = (index) => {
     setSelectedMood(index);
   };
 
@@ -77,7 +77,7 @@ export default function Mood() {
       // Pass the mood, onSave, and onClose props to the MoodDescription component
       <MoodDescription
         mood={moods[selectedMood]}
-        onSave={description => {
+        onSave={(description) => {
           const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description } : m));
           setMoods(updatedMoods);
           saveMoods(updatedMoods);
@@ -103,32 +103,37 @@ export default function Mood() {
       <ScrollView
         className="mt-4 w-full max-w-md"
         style={{ maxHeight: 500 }}
-        ref={ref => {
+        ref={(ref) => {
           this.scrollView = ref;
         }}
         onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
       >
-      {moods.map(({ mood, description, date, time }, index) => (
-        <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
-          <TouchableOpacity onPress={() => openDescription(index)} className="flex-1">
-            <Text className="font-bold">{mood}</Text>
-            <Text className="text-sm mt-1 italic text-gray-600">
-              {description
-                ? description.length > 50
-                  ? description.slice(0, 50) + "..."
-                  : description
-                : "Click to add more details about your mood..."}
-            </Text>
-            <Text className="text-xs mt-1 text-gray-500">
-              {date} {time}
-            </Text>
-          </TouchableOpacity>
-          {/* Delete button */}
-          <TouchableOpacity onPress={() => deleteMood(index)} className="ml-2">
-            <Ionicons name="trash-outline" size={16} color="gray" />
-          </TouchableOpacity>
-        </View>
-      ))}
+        {/* Map over the moods and display each in a scroll view (using index as the key) */}
+        {moods.map(({ mood, description, date, time }, index) => (
+          <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
+            <TouchableOpacity onPress={() => openDescription(index)} className="flex-1">
+              <Text className="font-bold">{mood}</Text>
+              <Text className="text-sm mt-1 italic text-gray-600">
+                {/* If there is a description, display it. If it's longer than 50 characters, truncate it to 50 characters and add "..." */}
+                {/* If there is no description, display "Click to add more details about your mood..." */}
+                {/* Used 50 characters instead of 25, as we felt 25 was too short */}
+                {description
+                  ? description.length > 50
+                    ? description.slice(0, 50) + "..."
+                    : description
+                  : "Click to add more details about your mood..."}
+              </Text>
+              <Text className="text-xs mt-1 text-gray-500">
+                {date} {time}
+              </Text>
+            </TouchableOpacity>
+            {/* Delete button */}
+            <TouchableOpacity onPress={() => deleteMood(index)} className="ml-2">
+              {/* Ionicons is a library that provides vector icons for React Native - here we've used the trash-outline icon for a delete button */}
+              <Ionicons name="trash-outline" size={16} color="gray" />
+            </TouchableOpacity>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
