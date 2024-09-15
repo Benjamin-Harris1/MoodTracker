@@ -18,7 +18,7 @@ export default function MoodDescription({ mood, onSave, onClose }) {
         numberOfLines={4}
         value={description}
         onChangeText={setDescription}
-        placeholder="Describe your mood..."
+        placeholder="Give a detailed description of your mood..."
       />
       <Button title="Save" onPress={handleSave} />
       <Button title="Close" onPress={onClose} />

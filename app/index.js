@@ -4,6 +4,9 @@ import { useEffect } from "react";
 // Import AsyncStorage for storing data
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MoodDescription from "./MoodDescription";
+import { getMoodColor } from "./utils/getMoodColor";
+// Import Ionicons to get vector-icons
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Mood() {
   const [mood, setMood] = React.useState("");
@@ -42,7 +45,7 @@ export default function Mood() {
       const now = new Date();
       const newMood = {
         mood: mood.trim(),
-        description: "Click to further describe your mood...",
+        description: "",
         date: now.toDateString(),
         time: now.toLocaleTimeString(),
       };
@@ -57,39 +60,21 @@ export default function Mood() {
     }
   };
 
+  // Use filter to remove the mood at the given index
+  const deleteMood = (index) => {
+    const updatedMoods = moods.filter((_, i) => i !== index);
+    setMoods(updatedMoods);
+    saveMoods(updatedMoods);
+  }
+
   const openDescription = index => {
     setSelectedMood(index);
   };
 
-  // Function to get the color of the mood based on the mood
-  const getMoodColor = mood => {
-    const moodLower = mood.toLowerCase();
-    // If the mood is sad, depressed, or unhappy, return the blue color
-    if (moodLower.includes("sad") || moodLower.includes("depressed") || moodLower.includes("unhappy") || moodLower.includes("bad")) {
-      return "bg-blue-400";
-    } else if (
-      moodLower.includes("happy") ||
-      moodLower.includes("good") ||
-      moodLower.includes("great") ||
-      moodLower.includes("joyful") ||
-      moodLower.includes("perfect")
-    ) {
-      // If the mood is happy, good, great, or joyful, return the green color
-      return "bg-green-400";
-    } else if (moodLower.includes("angry") || moodLower.includes("mad") || moodLower.includes("furious")) {
-      // If the mood is angry, mad, or furious, return the red color
-      return "bg-red-400";
-    } else if (moodLower.includes("anxious") || moodLower.includes("nervous") || moodLower.includes("worried")) {
-      // If the mood is anxious, nervous, or worried, return the yellow color
-      return "bg-yellow-400";
-    } else {
-      // If the mood is not recognized, return the gray color
-      return "bg-gray-200";
-    }
-  };
-
+  // If there is a selected mood, show the MoodDescription component
   if (selectedMood !== null) {
     return (
+      // Pass the mood, onSave, and onClose props to the MoodDescription component
       <MoodDescription
         mood={moods[selectedMood]}
         onSave={description => {
@@ -123,19 +108,27 @@ export default function Mood() {
         }}
         onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
       >
-        {moods.map(({ mood, description, date, time }, index) => (
-          <TouchableOpacity key={index} onPress={() => openDescription(index)}>
-            <View className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md`}>
-              <Text className="font-bold">{mood}</Text>
-              {description && (
-                <Text className="text-sm mt-1 text-gray-700">{description.length > 50 ? description.slice(0, 50) + "..." : description}</Text>
-              )}
-              <Text className="text-xs mt-1 text-gray-500">
-                {date} {time}
-              </Text>
-            </View>
+      {moods.map(({ mood, description, date, time }, index) => (
+        <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
+          <TouchableOpacity onPress={() => openDescription(index)} className="flex-1">
+            <Text className="font-bold">{mood}</Text>
+            <Text className="text-sm mt-1 italic text-gray-600">
+              {description
+                ? description.length > 50
+                  ? description.slice(0, 50) + "..."
+                  : description
+                : "Click to add more details about your mood..."}
+            </Text>
+            <Text className="text-xs mt-1 text-gray-500">
+              {date} {time}
+            </Text>
           </TouchableOpacity>
-        ))}
+          {/* Delete button */}
+          <TouchableOpacity onPress={() => deleteMood(index)} className="ml-2">
+            <Ionicons name="trash-outline" size={16} color="gray" />
+          </TouchableOpacity>
+        </View>
+      ))}
       </ScrollView>
     </View>
   );
