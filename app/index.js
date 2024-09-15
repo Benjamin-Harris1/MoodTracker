@@ -1,12 +1,14 @@
 import React from "react";
-import { View, Text, Button, TextInput, ScrollView } from "react-native";
+import { View, Text, Button, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import { useEffect } from "react";
 // Import AsyncStorage for storing data
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MoodDescription from "./MoodDescription";
 
 export default function Mood() {
   const [mood, setMood] = React.useState("");
   const [moods, setMoods] = React.useState([]);
+  const [selectedMood, setSelectedMood] = React.useState(null);
 
   // Load saved moods when the component mounts
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function Mood() {
       const now = new Date();
       const newMood = {
         mood: mood.trim(),
+        description: "Click to further describe your mood...",
         date: now.toDateString(),
         time: now.toLocaleTimeString(),
       };
@@ -52,6 +55,10 @@ export default function Mood() {
       // Clear the input field
       setMood("");
     }
+  }
+
+  const openDescription = (index) => {
+    setSelectedMood(index);
   }
 
   // Function to get the color of the mood based on the mood
@@ -75,6 +82,23 @@ export default function Mood() {
     }
   };
 
+  if (selectedMood !== null) {
+    return (
+      <MoodDescription
+        mood={moods[selectedMood]}
+        onSave={(description) => {
+          const updatedMoods = moods.map((m, i) => 
+            i === selectedMood ? { ...m, description } : m
+          );
+          setMoods(updatedMoods);
+          saveMoods(updatedMoods);
+          setSelectedMood(null);
+        }}
+        onClose={() => setSelectedMood(null)}
+      />
+    );
+  }
+
   return (
     <View className="flex-1 bg-gray-100 p-4 justify-start items-center pt-12 mt-6">
       <Text className="text-2xl mb-4 text-center font-bold">Mood Tracker</Text>
@@ -94,11 +118,14 @@ export default function Mood() {
         onContentSizeChange={() => this.scrollView.scrollToEnd({animated: true})}
         >
         {/* Map over the moods and display each in a scroll view (using index as key) */}
-        {moods.map(({ mood, date, time }, index) => (
+        {moods.map(({ mood, description, date, time }, index) => (
+          <TouchableOpacity key={index} onPress={() => openDescription(index)}>
           <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md`}>
-            <Text>{mood}</Text>
-            <Text className="text-xs text-gray-500">{date} {time}</Text>
+            <Text className>{mood}</Text>
+            <Text className="text-sm mt-1 text-gray-500">{description}</Text>
+            <Text className="text-xs mt-1 text-gray-800">{date} {time}</Text>
           </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
