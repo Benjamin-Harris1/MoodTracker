@@ -113,7 +113,7 @@ export default function Mood() {
       </View>
       <ScrollView 
         className="mt-4 w-full max-w-md" 
-        style={{maxHeight: 300}}
+        style={{maxHeight: 500}}
         ref={(ref) => { this.scrollView = ref; }}
         onContentSizeChange={() => this.scrollView.scrollToEnd({animated: true})}
         >
