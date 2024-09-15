@@ -28,7 +28,7 @@ export default function Mood() {
   };
 
   // Function to save moods to AsyncStorage
-  const saveMoods = async (moods) => {
+  const saveMoods = async moods => {
     try {
       await AsyncStorage.setItem("moods", JSON.stringify(moods));
     } catch (error) {
@@ -55,19 +55,25 @@ export default function Mood() {
       // Clear the input field
       setMood("");
     }
-  }
+  };
 
-  const openDescription = (index) => {
+  const openDescription = index => {
     setSelectedMood(index);
-  }
+  };
 
   // Function to get the color of the mood based on the mood
-  const getMoodColor = (mood) => {
+  const getMoodColor = mood => {
     const moodLower = mood.toLowerCase();
     // If the mood is sad, depressed, or unhappy, return the blue color
     if (moodLower.includes("sad") || moodLower.includes("depressed") || moodLower.includes("unhappy") || moodLower.includes("bad")) {
       return "bg-blue-400";
-    } else if (moodLower.includes("happy") || moodLower.includes("good") || moodLower.includes("great") || moodLower.includes("joyful") || moodLower.includes("perfect")) {
+    } else if (
+      moodLower.includes("happy") ||
+      moodLower.includes("good") ||
+      moodLower.includes("great") ||
+      moodLower.includes("joyful") ||
+      moodLower.includes("perfect")
+    ) {
       // If the mood is happy, good, great, or joyful, return the green color
       return "bg-green-400";
     } else if (moodLower.includes("angry") || moodLower.includes("mad") || moodLower.includes("furious")) {
@@ -86,10 +92,8 @@ export default function Mood() {
     return (
       <MoodDescription
         mood={moods[selectedMood]}
-        onSave={(description) => {
-          const updatedMoods = moods.map((m, i) => 
-            i === selectedMood ? { ...m, description } : m
-          );
+        onSave={description => {
+          const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description } : m));
           setMoods(updatedMoods);
           saveMoods(updatedMoods);
           setSelectedMood(null);
@@ -109,22 +113,27 @@ export default function Mood() {
         onChangeText={setMood}
       />
       <View className="w-full max-w-md">
-      <Button title={"Add mood"} onPress={addMood}/>
+        <Button title={"Add mood"} onPress={addMood} />
       </View>
-      <ScrollView 
-        className="mt-4 w-full max-w-md" 
-        style={{maxHeight: 500}}
-        ref={(ref) => { this.scrollView = ref; }}
-        onContentSizeChange={() => this.scrollView.scrollToEnd({animated: true})}
-        >
-        {/* Map over the moods and display each in a scroll view (using index as key) */}
+      <ScrollView
+        className="mt-4 w-full max-w-md"
+        style={{ maxHeight: 500 }}
+        ref={ref => {
+          this.scrollView = ref;
+        }}
+        onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
+      >
         {moods.map(({ mood, description, date, time }, index) => (
           <TouchableOpacity key={index} onPress={() => openDescription(index)}>
-          <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md`}>
-            <Text className>{mood}</Text>
-            <Text className="text-sm mt-1 text-gray-500">{description}</Text>
-            <Text className="text-xs mt-1 text-gray-800">{date} {time}</Text>
-          </View>
+            <View className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md`}>
+              <Text className="font-bold">{mood}</Text>
+              {description && (
+                <Text className="text-sm mt-1 text-gray-700">{description.length > 50 ? description.slice(0, 50) + "..." : description}</Text>
+              )}
+              <Text className="text-xs mt-1 text-gray-500">
+                {date} {time}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
