@@ -1,12 +1,17 @@
 import React from "react";
-import { View, Text, Button, TextInput, ScrollView } from "react-native";
+import { View, Text, Button, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import { useEffect } from "react";
 // Import AsyncStorage for storing data
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MoodDescription from "./MoodDescription";
+import { getMoodColor } from "./utils/getMoodColor";
+// Import Ionicons to get vector-icons
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Mood() {
   const [mood, setMood] = React.useState("");
   const [moods, setMoods] = React.useState([]);
+  const [selectedMood, setSelectedMood] = React.useState(null);
 
   // Load saved moods when the component mounts
   useEffect(() => {
@@ -40,6 +45,7 @@ export default function Mood() {
       const now = new Date();
       const newMood = {
         mood: mood.trim(),
+        description: "",
         date: now.toDateString(),
         time: now.toLocaleTimeString(),
       };
@@ -52,28 +58,35 @@ export default function Mood() {
       // Clear the input field
       setMood("");
     }
-  }
-
-  // Function to get the color of the mood based on the mood
-  const getMoodColor = (mood) => {
-    const moodLower = mood.toLowerCase();
-    // If the mood is sad, depressed, or unhappy, return the blue color
-    if (moodLower.includes("sad") || moodLower.includes("depressed") || moodLower.includes("unhappy") || moodLower.includes("bad")) {
-      return "bg-blue-400";
-    } else if (moodLower.includes("happy") || moodLower.includes("good") || moodLower.includes("great") || moodLower.includes("joyful") || moodLower.includes("perfect")) {
-      // If the mood is happy, good, great, or joyful, return the green color
-      return "bg-green-400";
-    } else if (moodLower.includes("angry") || moodLower.includes("mad") || moodLower.includes("furious")) {
-      // If the mood is angry, mad, or furious, return the red color
-      return "bg-red-400";
-    } else if (moodLower.includes("anxious") || moodLower.includes("nervous") || moodLower.includes("worried")) {
-      // If the mood is anxious, nervous, or worried, return the yellow color
-      return "bg-yellow-400";
-    } else {
-      // If the mood is not recognized, return the gray color
-      return "bg-gray-200";
-    }
   };
+
+  // Use filter to remove the mood at the given index
+  const deleteMood = (index) => {
+    const updatedMoods = moods.filter((_, i) => i !== index);
+    setMoods(updatedMoods);
+    saveMoods(updatedMoods);
+  };
+
+  const openDescription = (index) => {
+    setSelectedMood(index);
+  };
+
+  // If there is a selected mood, show the MoodDescription component
+  if (selectedMood !== null) {
+    return (
+      // Pass the mood, onSave, and onClose props to the MoodDescription component
+      <MoodDescription
+        mood={moods[selectedMood]}
+        onSave={(description) => {
+          const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description } : m));
+          setMoods(updatedMoods);
+          saveMoods(updatedMoods);
+          setSelectedMood(null);
+        }}
+        onClose={() => setSelectedMood(null)}
+      />
+    );
+  }
 
   return (
     <View className="flex-1 bg-gray-100 p-4 justify-start items-center pt-12 mt-6">
@@ -85,19 +98,40 @@ export default function Mood() {
         onChangeText={setMood}
       />
       <View className="w-full max-w-md">
-      <Button title={"Add mood"} onPress={addMood}/>
+        <Button title={"Add mood"} onPress={addMood} />
       </View>
-      <ScrollView 
-        className="mt-4 w-full max-w-md" 
-        style={{maxHeight: 300}}
-        ref={(ref) => { this.scrollView = ref; }}
-        onContentSizeChange={() => this.scrollView.scrollToEnd({animated: true})}
-        >
-        {/* Map over the moods and display each in a scroll view (using index as key) */}
-        {moods.map(({ mood, date, time }, index) => (
-          <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md`}>
-            <Text>{mood}</Text>
-            <Text className="text-xs text-gray-500">{date} {time}</Text>
+      <ScrollView
+        className="mt-4 w-full max-w-md"
+        style={{ maxHeight: 500 }}
+        ref={(ref) => {
+          this.scrollView = ref;
+        }}
+        onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
+      >
+        {/* Map over the moods and display each in a scroll view (using index as the key) */}
+        {moods.map(({ mood, description, date, time }, index) => (
+          <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
+            <TouchableOpacity onPress={() => openDescription(index)} className="flex-1">
+              <Text className="font-bold">{mood}</Text>
+              <Text className="text-sm mt-1 italic text-gray-600">
+                {/* If there is a description, display it. If it's longer than 50 characters, truncate it to 50 characters and add "..." */}
+                {/* If there is no description, display "Click to add more details about your mood..." */}
+                {/* Used 50 characters instead of 25, as we felt 25 was too short */}
+                {description
+                  ? description.length > 50
+                    ? description.slice(0, 50) + "..."
+                    : description
+                  : "Click to add more details about your mood..."}
+              </Text>
+              <Text className="text-xs mt-1 text-gray-500">
+                {date} {time}
+              </Text>
+            </TouchableOpacity>
+            {/* Delete button */}
+            <TouchableOpacity onPress={() => deleteMood(index)} className="ml-2">
+              {/* Ionicons is a library that provides vector icons for React Native - here we've used the trash-outline icon for a delete button */}
+              <Ionicons name="trash-outline" size={16} color="gray" />
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
