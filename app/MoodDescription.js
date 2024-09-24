@@ -2,14 +2,22 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getMoodColor } from './utils/getMoodColor';
+import { doc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
+import { database } from '../firebase'; // Import Firebase database
 
 export default function MoodDescription({ mood, onSave, onClose }) {
   const [description, setDescription] = React.useState(mood.description);
 
   // Function to handle saving the updated mood description
-  const handleSave = () => {
-    onSave(description);
-    onClose();
+  const handleSave = async () => {
+    try {
+      const moodDoc = doc(database, 'moods', mood.id);
+      await updateDoc(moodDoc, { description });
+      onSave(description);
+      onClose();
+    } catch (error) {
+      console.error('Error updating mood description:', error);
+    }
   };
 
   return (

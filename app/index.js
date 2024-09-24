@@ -1,12 +1,14 @@
 import React from "react";
 import { View, Text, Button, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import { useEffect } from "react";
-// Import AsyncStorage for storing data
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import MoodDescription from "./MoodDescription";
 import { getMoodColor } from "./utils/getMoodColor";
 // Import Ionicons to get vector-icons
 import { Ionicons } from "@expo/vector-icons";
+// Import firebase 
+import { app, database } from "../firebase.js"
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+
 
 export default function Mood() {
   const [mood, setMood] = React.useState("");
@@ -18,29 +20,28 @@ export default function Mood() {
     loadMoods();
   }, []);
 
-  // Function to load moods from AsyncStorage (which is a library for storing data in the phone's memory -> sort ofl ike using localStorage)
+  // Function to load moods from Firestore database
   const loadMoods = async () => {
     try {
-      const storedMoods = await AsyncStorage.getItem("moods");
-      if (storedMoods) {
-        setMoods(JSON.parse(storedMoods));
-      }
+      const snapshot = await getDocs(collection(database, "moods"));
+      const loadedMoods = [];
+      snapshot.forEach((doc) => {
+        loadedMoods.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort the moods by date and time
+      loadedMoods.sort((a, b) => {
+        const dateA = `${a.date} ${a.time}`;
+        const dateB = `${b.date} ${b.time}`;
+        return dateA.localeCompare(dateB);
+      });
+      setMoods(loadedMoods);
     } catch (error) {
       console.error("Error loading moods:", error);
     }
   };
 
-  // Function to save moods to AsyncStorage
-  const saveMoods = async (moods) => {
-    try {
-      await AsyncStorage.setItem("moods", JSON.stringify(moods));
-    } catch (error) {
-      console.error("Error saving moods:", error);
-    }
-  };
-
-  // Function to add a moo
-  const addMood = () => {
+  // Function to add a mood to the Firestore database
+  const addMood = async () => {
     if (mood.trim()) {
       const now = new Date();
       const newMood = {
@@ -49,24 +50,29 @@ export default function Mood() {
         date: now.toDateString(),
         time: now.toLocaleTimeString(),
       };
-      // Use spread operator to add the new mood to the existing moods array
-      const updatedMoods = [...moods, newMood];
-      // Update the state with the new mood
-      setMoods(updatedMoods);
-      // Save the new mood to AsyncStorage
-      saveMoods(updatedMoods);
-      // Clear the input field
-      setMood("");
+      try {
+        await addDoc(collection(database, "moods"), newMood);
+        // Reload moods after adding a new mood
+        loadMoods();
+        // Clear the input field
+        setMood("");
+      } catch (error) {
+        console.error("Error adding mood:", error);
+      }
     }
   };
 
-  // Use filter to remove the mood at the given index
-  const deleteMood = (index) => {
-    const updatedMoods = moods.filter((_, i) => i !== index);
-    setMoods(updatedMoods);
-    saveMoods(updatedMoods);
+  // Function to delete a mood from the Firestore database
+  const deleteMood = async (id) => {
+    try {
+      await deleteDoc(doc(database, "moods", id));
+      loadMoods();
+    } catch (error) {
+      console.error("Error deleting mood:", error);
+    }
   };
 
+  // Function to open the MoodDescription component
   const openDescription = (index) => {
     setSelectedMood(index);
   };
@@ -80,7 +86,6 @@ export default function Mood() {
         onSave={(description) => {
           const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description } : m));
           setMoods(updatedMoods);
-          saveMoods(updatedMoods);
           setSelectedMood(null);
         }}
         onClose={() => setSelectedMood(null)}
@@ -109,8 +114,8 @@ export default function Mood() {
         onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
       >
         {/* Map over the moods and display each in a scroll view (using index as the key) */}
-        {moods.map(({ mood, description, date, time }, index) => (
-          <View key={index} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
+        {moods.map(({ id, mood, description, date, time }, index) => (
+          <View key={id} className={`p-2 mb-2 ${getMoodColor(mood)} rounded-md flex-row justify-between items-start`}>
             <TouchableOpacity onPress={() => openDescription(index)} className="flex-1">
               <Text className="font-bold">{mood}</Text>
               <Text className="text-sm mt-1 italic text-gray-600">
@@ -128,7 +133,7 @@ export default function Mood() {
               </Text>
             </TouchableOpacity>
             {/* Delete button */}
-            <TouchableOpacity onPress={() => deleteMood(index)} className="ml-2">
+            <TouchableOpacity onPress={() => deleteMood(id)} className="ml-2">
               {/* Ionicons is a library that provides vector icons for React Native - here we've used the trash-outline icon for a delete button */}
               <Ionicons name="trash-outline" size={16} color="gray" />
             </TouchableOpacity>
