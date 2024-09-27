@@ -83,8 +83,8 @@ export default function Mood() {
       // Pass the mood, onSave, and onClose props to the MoodDescription component
       <MoodDescription
         mood={moods[selectedMood]}
-        onSave={(description) => {
-          const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description } : m));
+        onSave={(description, imageUri) => {
+          const updatedMoods = moods.map((m, i) => (i === selectedMood ? { ...m, description, imageUri } : m));
           setMoods(updatedMoods);
           setSelectedMood(null);
         }}
