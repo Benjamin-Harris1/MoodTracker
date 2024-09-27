@@ -6,7 +6,7 @@ import { doc, updateDoc } from 'firebase/firestore'; // Import Firestore functio
 import { database } from '../firebase'; // Import Firebase database
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../firebase';
 
 export default function MoodDescription({ mood, onSave, onClose }) {
@@ -51,6 +51,17 @@ export default function MoodDescription({ mood, onSave, onClose }) {
     setImageUri(downloadUrl);
     return downloadUrl;
   }
+
+  // Delete image from Firebase Storage
+  const deleteImage = async () => {
+    if (imageUri) {
+      const storageRef = ref(storage, imageUri);
+      await deleteObject(storageRef);
+      setImageUri(null);
+      const moodDoc = doc(database, 'moods', mood.id);
+      await updateDoc(moodDoc, { imageUri: null });
+    }
+  }
  
   return (
     <View className="flex-1 bg-white">
@@ -65,34 +76,42 @@ export default function MoodDescription({ mood, onSave, onClose }) {
         </View>
         
         {/* Display the mood and date/time */}
-        <View className={`p-4 rounded-lg mb-6 ${getMoodColor(mood.mood)}`}>
+        <View className={`p-4 rounded-lg mb-2 ${getMoodColor(mood.mood)}`}>
           <Text className="text-lg mb-2">{mood.mood}</Text>
           <Text className="text-sm text-gray-700">{mood.date} at {mood.time}</Text>
         </View>
         
         {/* Text input for the mood description */}
         <TextInput
-          className="border border-gray-300 p-3 rounded-lg mb-6"
+          className="border border-gray-300 p-3 rounded-lg mb-2"
           multiline
-          numberOfLines={8}
+          numberOfLines={6}
           value={description}
           onChangeText={setDescription}
           placeholder="Describe your mood in more detail..."
           textAlignVertical="top"
         />
+        {/* Display the image */}
+        {imageUri && (
+          <View style={{ position: 'relative', marginBottom: 24 }}>
+            <Image source={{ uri: imageUri }} className="w-full h-60 rounded-lg" />
+            <TouchableOpacity onPress={deleteImage} className="absolute top-2 right-2">
+              <Ionicons name="trash-outline" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Image picker */}
-        <TouchableOpacity onPress={pickImage} className="border border-gray-300 p-3 rounded-lg mb-6">
-          <Text className="text-lg mb-2 text-center">Add an image</Text>
+        <TouchableOpacity onPress={pickImage} className="bg-blue-500 p-4 rounded-lg mb-2">
+          <Text className=" text-white text-center text-base font-bold">Add an image</Text>
         </TouchableOpacity>
-        {imageUri && <Image source={{ uri: imageUri }} className="w-full h-40 rounded-lg mb-6" />}
         
         {/* Save button */}
         <TouchableOpacity 
           onPress={handleSave}
           className="bg-blue-500 p-4 rounded-lg"
         >
-          <Text className="text-white text-center font-bold text-lg">Save Description</Text>
+          <Text className="text-white text-center text-base font-bold">Save</Text>
         </TouchableOpacity>
       </View>
     </View>
