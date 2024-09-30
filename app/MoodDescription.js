@@ -27,37 +27,52 @@ export default function MoodDescription({ mood, onSave, onClose }) {
 
   // Function to handle picking an image
   const pickImage = async () => {
+    // Use the ImagePicker library to pick an image from the device's gallery
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Only allow images
+      allowsEditing: true, // Allow editing of the image
+      aspect: [4, 3], // Set the aspect ratio to 4:3
       quality: 1,
     });
 
+    // If an image was selected
     if (!result.canceled) {
+      // Get the local URI of the image
       const localUri = result.assets[0].uri;
+      // Call the uploadImage function to upload the image to Firebase Storage and get the download URL
       const downloadUrl = await uploadImage(localUri);
+      // Set the download URL as the image URI state
       setImageUri(downloadUrl);
     }
   };
 
   // Upload image to Firebase Storage
   const uploadImage = async (uri) => {
+    // Fetch the image from the local URI
     const response = await fetch(uri);
+    // Convert the image to a blob
     const blob = await response.blob();
+    // Create a reference to the mood's image in Firebase Storage
     const storageRef = ref(storage, `moodImages/${mood.id}`);
+    // Upload the image to Firebase Storage
     await uploadBytes(storageRef, blob);
+    // Get the download URL of the image
     const downloadUrl = await getDownloadURL(storageRef);
-    setImageUri(downloadUrl);
+    // Return the download URL
     return downloadUrl;
   }
 
   // Delete image from Firebase Storage
   const deleteImage = async () => {
+    // Check if the image URI is set
     if (imageUri) {
+      // Create a reference to the image in Firebase Storage
       const storageRef = ref(storage, imageUri);
+      // Delete the image from Firebase Storage
       await deleteObject(storageRef);
+      // Set the image URI state to null
       setImageUri(null);
+      // Update the mood document in Firestore to remove the image URI
       const moodDoc = doc(database, 'moods', mood.id);
       await updateDoc(moodDoc, { imageUri: null });
     }
