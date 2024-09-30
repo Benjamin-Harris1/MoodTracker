@@ -108,7 +108,7 @@ export default function MoodDescription({ mood, onSave, onClose }) {
         />
         {/* Display the image */}
         {imageUri && (
-          <View style={{ position: 'relative', marginBottom: 24 }}>
+          <View className="relative mb-2">
             <Image source={{ uri: imageUri }} className="w-full h-60 rounded-lg" />
             <TouchableOpacity onPress={deleteImage} className="absolute top-2 right-2">
               <Ionicons name="trash-outline" size={24} color="white" />
