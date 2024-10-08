@@ -77,6 +77,28 @@ export default function MoodDescription({ mood, onSave, onClose }) {
       await updateDoc(moodDoc, { imageUri: null });
     }
   }
+
+  const launchCamera = async () => {
+    const result = await ImagePicker.requestCameraPermissionsAsync();
+    if (!result.granted) {
+      alert("Camera access not granted");
+    } else {
+      const cameraResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+  
+      if (!cameraResult.canceled) {
+        const localUri = cameraResult.assets[0].uri;
+        const downloadUrl = await uploadImage(localUri);
+        setImageUri(downloadUrl);
+      }
+    }
+  };
+
+
  
   return (
     <View className="flex-1 bg-white">
@@ -116,10 +138,15 @@ export default function MoodDescription({ mood, onSave, onClose }) {
           </View>
         )}
 
-        {/* Image picker */}
-        <TouchableOpacity onPress={pickImage} className="bg-blue-500 p-4 rounded-lg mb-2">
-          <Text className=" text-white text-center text-base font-bold">Add an image</Text>
-        </TouchableOpacity>
+        {/* Image picker and Camera buttons */}
+        <View className="flex-row justify-between mb-2">
+          <TouchableOpacity onPress={pickImage} className="bg-blue-500 p-4 rounded-lg flex-1 mr-2">
+            <Text className="text-white text-center text-base font-bold">Add an image</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={launchCamera} className="bg-green-500 p-4 rounded-lg flex-1 ml-2">
+            <Text className="text-white text-center text-base font-bold">Take a picture</Text>
+          </TouchableOpacity>
+        </View>
         
         {/* Save button */}
         <TouchableOpacity 
